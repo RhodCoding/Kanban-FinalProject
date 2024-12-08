@@ -77,10 +77,24 @@
         const { task, sourceList } = JSON.parse(data) as { task: Task; sourceList: string };
         
         if (sourceList !== targetList) {
+            // Moving between columns
             tasks[sourceList] = tasks[sourceList].filter(t => t.id !== task.id);
             tasks[targetList] = [...tasks[targetList], task];
-            tasks = tasks;
+        } else {
+            // Reordering within the same column
+            const dropIndex = tasks[targetList].findIndex(t => 
+                event.target instanceof Element && 
+                t.id.toString() === event.target.closest('[data-task-id]')?.getAttribute('data-task-id')
+            );
+            if (dropIndex !== -1) {
+                const sourceIndex = tasks[sourceList].findIndex(t => t.id === task.id);
+                const taskList = [...tasks[targetList]];
+                taskList.splice(sourceIndex, 1);
+                taskList.splice(dropIndex, 0, task);
+                tasks[targetList] = taskList;
+            }
         }
+        tasks = tasks;
     }
 
     function handleDragOver(event: DragEvent) {
@@ -239,6 +253,7 @@
                             {#each taskList as task (task.id)}
                                 <div
                                     role="article"
+                                    data-task-id={task.id}
                                     aria-label={`Task: ${task.title}`}
                                     class="bg-blue-700 hover:bg-blue-600 p-4 rounded-lg shadow-md cursor-move group hover:shadow-lg transition-all duration-200 border border-blue-600"
                                     draggable={true}
